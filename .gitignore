@@ -355,7 +355,10 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 *.idea/
+*.idea/**
+.idea
 *.qodo/
+*.qodo/**
 
 # Custom additions for this project
 # Environment files
