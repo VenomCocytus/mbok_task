@@ -1,6 +1,12 @@
 @MbokTask_HostAddress = http://localhost:5172
 
-GET {{MbokTask_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health Endpoints
 
+GET {{MbokTask_HostAddress}}/health/
+Accept: application/json
 ###
+GET {{MbokTask_HostAddress}}/health/ready/
+Accept: application/json
+###
+GET {{MbokTask_HostAddress}}/health/live/
+Accept: application/json

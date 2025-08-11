@@ -10,16 +10,16 @@ using Serilog;
 using Serilog.Events;
 using FluentValidation;
 using MediatR;
-using AutoMapper;
 using AspNetCoreRateLimit;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using OpenTelemetry.Metrics;
 using MbokTask.Domain.Entities;
 using MbokTask.Infrastructure.Persistence.Context;
 using Asp.Versioning;
+using MbokTask.Middleware;
+using MbokTask.Infrastructure.Services;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -119,7 +119,7 @@ try
     {
         options.AddPolicy("AllowSpecificOrigins", policy =>
         {
-            policy.WithOrigins(configuration.GetSection("AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" })
+            policy.WithOrigins(configuration.GetSection("AllowedOrigins").Get<string[]>() ?? ["http://localhost:3000"])
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
@@ -188,9 +188,9 @@ try
 
     // OpenTelemetry
     services.AddOpenTelemetry()
-        .WithTracing(builder =>
+        .WithTracing(providerBuilder =>
         {
-            builder.SetResourceBuilder(ResourceBuilder.CreateDefault()
+            providerBuilder.SetResourceBuilder(ResourceBuilder.CreateDefault()
                     .AddService("TaskManagementAPI", "1.0.0"))
                    .AddAspNetCoreInstrumentation()
                    .AddEntityFrameworkCoreInstrumentation()
@@ -198,7 +198,7 @@ try
 
             if (configuration.GetValue<bool>("Jaeger:Enabled"))
             {
-                builder.AddJaegerExporter();
+                providerBuilder.AddJaegerExporter();
             }
         });
 
@@ -241,7 +241,7 @@ try
                         Id = "Bearer"
                     }
                 },
-                Array.Empty<string>()
+                []
             }
         });
     });
@@ -258,6 +258,10 @@ try
             c.RoutePrefix = string.Empty;
         });
     }
+
+    // Global exception handling and request logging
+    app.UseMiddleware<GlobalExceptionMiddleware>();
+    app.UseSerilogRequestLogging();
 
     // Security Headers
     app.Use(async (context, next) =>
@@ -318,11 +322,12 @@ try
         var context = scope.ServiceProvider.GetRequiredService<TaskManagementDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<DatabaseSeeder>>();
 
         try
         {
-            await context.Database.MigrateAsync();
-            await SeedDataAsync(userManager, roleManager);
+            var seeder = new DatabaseSeeder(context, userManager, roleManager, logger);
+            await seeder.SeedAsync();
         }
         catch (Exception ex)
         {
@@ -341,38 +346,38 @@ finally
     Log.CloseAndFlush();
 }
 
-static async Task SeedDataAsync(UserManager<User> userManager, RoleManager<IdentityRole<Guid>> roleManager)
-{
-    // Seed roles
-    var roles = new[] { "Admin", "Manager", "Member" };
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role, NormalizedName = role.ToUpper() });
-        }
-    }
-
-    // Seed admin user
-    if (await userManager.FindByEmailAsync("admin@taskmanagement.com") == null)
-    {
-        var adminUser = new User
-        {
-            Id = Guid.NewGuid(),
-            UserName = "admin@taskmanagement.com",
-            Email = "admin@taskmanagement.com",
-            FirstName = "System",
-            LastName = "Administrator",
-            EmailConfirmed = true,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
-            IsActive = true
-        };
-
-        var result = await userManager.CreateAsync(adminUser, "Admin123!");
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
-        }
-    }
-}
+// static async Task SeedDataAsync(UserManager<User> userManager, RoleManager<IdentityRole<Guid>> roleManager)
+// {
+//     // Seed roles
+//     var roles = new[] { "Admin", "Manager", "Member" };
+//     foreach (var role in roles)
+//     {
+//         if (!await roleManager.RoleExistsAsync(role))
+//         {
+//             await roleManager.CreateAsync(new IdentityRole<Guid> { Name = role, NormalizedName = role.ToUpper() });
+//         }
+//     }
+//
+//     // Seed admin user
+//     if (await userManager.FindByEmailAsync("admin@taskmanagement.com") == null)
+//     {
+//         var adminUser = new User
+//         {
+//             Id = Guid.NewGuid(),
+//             UserName = "admin@taskmanagement.com",
+//             Email = "admin@taskmanagement.com",
+//             FirstName = "System",
+//             LastName = "Administrator",
+//             EmailConfirmed = true,
+//             CreatedAt = DateTime.UtcNow,
+//             UpdatedAt = DateTime.UtcNow,
+//             IsActive = true
+//         };
+//
+//         var result = await userManager.CreateAsync(adminUser, "Admin123!");
+//         if (result.Succeeded)
+//         {
+//             await userManager.AddToRoleAsync(adminUser, "Admin");
+//         }
+//     }
+// }
