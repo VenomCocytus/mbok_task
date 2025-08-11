@@ -169,11 +169,6 @@ publish/
 *.pubxml
 *.publishproj
 
-# Microsoft Azure Web App publish settings. Comment the next line if you want to
-# checkin your Azure Web App publish settings, but sensitive information contained
-# in these files may be visible to others.
-*.azurePubxml
-
 # Microsoft Azure Build Output
 csx/
 *.build.csdef
@@ -268,10 +263,6 @@ node_modules/
 *.dsw
 *.dsp
 
-# Visual Studio 6 technical files
-*.ncb
-*.aps
-
 # Visual Studio LightSwitch build output
 **/*.HTMLClient/GeneratedArtifacts
 **/*.DesktopClient/GeneratedArtifacts
@@ -363,6 +354,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+*.idea/
+*.qodo/
 
 # Custom additions for this project
 # Environment files
@@ -379,7 +372,6 @@ FodyWeavers.xsd
 
 # Log files
 logs/
-*.log
 
 # Docker volumes
 docker-volumes/

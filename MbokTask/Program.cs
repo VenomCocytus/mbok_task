@@ -49,7 +49,7 @@ try
     // Database Configuration
     services.AddDbContext<TaskManagementDbContext>(options =>
         options.UseNpgsql(configuration.GetConnectionString("DefaultConnection") ?? 
-            "Host=localhost;Database=mbok_task;Username=postgres;Password=postgres"));
+            "Host=localhost;Database=mbok_task;Username=postgres;Password=#Roxanne2004"));
 
     // Identity Configuration
     services.AddIdentity<User, IdentityRole<Guid>>(options =>

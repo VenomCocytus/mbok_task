@@ -9,7 +9,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["MbokTask/MbokTask.csproj", "MbokTask/"]
 RUN dotnet restore "MbokTask/MbokTask.csproj"
-COPY . .
+COPY .. .
 WORKDIR "/src/MbokTask"
 RUN dotnet build "./MbokTask.csproj" -c $BUILD_CONFIGURATION -o /app/build
 

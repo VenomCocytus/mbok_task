@@ -12,10 +12,10 @@
 **/*.dbmdl
 **/*.jfm
 **/azds.yaml
-**/bin
+../bin
 **/charts
 **/docker-compose*
-**/Dockerfile*
+MbokTask/Dockerfile
 **/node_modules
 **/npm-debug.log
 **/obj
